@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingreso de Vehículo - MundoAuto</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.21.0/dist/umd/supabase.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        .card {
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .input-group:focus-within {
+            transform: scale(1.02);
+        }
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        .preview-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.9);
+        }
+        .modal-content {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 700px;
+        }
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .close:hover,
+        .close:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-12 px-4 sm:px-6 lg:px-8 flex flex-col justify-between bg-gray-100">
+    <div class="max-w-2xl w-full mx-auto bg-white shadow-2xl rounded-lg overflow-hidden card">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-8 rounded-t-lg relative overflow-hidden">
+            <h1 class="text-4xl font-bold mb-2 flex items-center">
+                <i data-feather="truck" class="mr-2"></i>
+                Gestión de Vehículos
+            </h1>
+            <p class="text-blue-100">Complete la información del vehículo y genere el enlace para el cliente.</p>
+            <div class="absolute bottom-0 left-0 w-full h-2 bg-blue-500">
+                <div id="progressBar" class="h-full bg-yellow-400 progress-bar" style="width: 0%"></div>
+            </div>
+        </div>
+        <div id="formContainer" class="p-8">
+            <form id="vehicleForm" class="space-y-6">
+                <div class="input-group">
+                    <label for="vehiculoIngreso" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i data-feather="truck" class="mr-2"></i>Vehículo de Ingreso
+                    </label>
+                    <input type="text" id="vehiculoIngreso" name="vehiculoIngreso" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="input-group">
+                    <label for="modelo" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i data-feather="tag" class="mr-2"></i>Modelo
+                    </label>
+                    <input type="text" id="modelo" name="modelo" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="input-group">
+                    <label for="kilometraje" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i data-feather="activity" class="mr-2"></i>Kilometraje
+                    </label>
+                    <input type="number" id="kilometraje" name="kilometraje" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="input-group">
+                    <label for="fichaTecnica" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i data-feather="file-text" class="mr-2"></i>Ficha Técnica
+                    </label>
+                    <textarea id="fichaTecnica" name="fichaTecnica" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div class="input-group">
+                        <label for="cantidadCuotas" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                            <i data-feather="hash" class="mr-2"></i>Cantidad de Cuotas
+                        </label>
+                        <input type="number" id="cantidadCuotas" name="cantidadCuotas" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                    </div>
+                    <div class="input-group">
+                        <label for="valorCuotas" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                            <i data-feather="dollar-sign" class="mr-2"></i>Valor de las Cuotas
+                        </label>
+                        <input type="number" id="valorCuotas" name="valorCuotas" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="fotos" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i data-feather="image" class="mr-2"></i>Fotos del Vehículo (máximo 8)
+                    </label>
+                    <input type="file" id="fotos" name="fotos" accept="image/*" multiple class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" onchange="previewNewImages(this)">
+                </div>
+                <div id="imagePreview" class="grid grid-cols-4 gap-2 mt-2"></div>
+                <div id="existingImagePreview" class="grid grid-cols-4 gap-2 mt-2"></div>
+                <div>
+                    <button type="submit" id="submitButton" class="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out transform hover:scale-105">
+                        <i data-feather="share-2" class="mr-2"></i>
+                        <span id="submitButtonText">Guardar Vehículo</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal para duplicar vehículo -->
+    <div id="duplicateModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 class="text-2xl font-bold mb-4">Duplicar Vehículo</h2>
+            <form id="duplicateForm">
+                <!-- Los campos del formulario se generarán dinámicamente -->
+            </form>
+        </div>
+    </div>
+
+        <div id="successBanner" class="hidden p-8 bg-green-100 text-green-700 rounded-b-lg">
+            <h2 class="text-2xl font-bold mb-4">¡Enlace generado con éxito!</h2>
+            <p class="mb-4">Comparta este enlace con el cliente para que complete sus datos:</p>
+            <p class="mb-4"><a id="formLink" href="#" class="text-blue-600 underline break-all"></a></p>
+            <button onclick="location.reload()" class="bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition duration-300">
+                Cargar otro vehículo
+            </button>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-xl">
+            <div class="loader mx-auto"></div>
+            <p class="mt-4 text-lg font-semibold text-gray-700">Cargando...</p>
+        </div>
+    </div>
+
+    <div id="vehiculosList" class="max-w-2xl w-full mx-auto mt-8 bg-white shadow-xl rounded-lg overflow-hidden">
+        <h2 class="text-2xl font-bold p-4 bg-blue-600 text-white">Vehículos Cargados</h2>
+        <ul id="vehiculosListItems" class="divide-y divide-gray-200"></ul>
+    </div>
+
+    <footer class="mt-8 text-center text-sm text-gray-500">
+        <p>© 2024 Todos los derechos reservados.</p>
+    </footer>
+
+    <script>
+         feather.replace();
+    
+    const supabaseUrl = 'https://ozxntghuwrycyqqpvhst.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96eG50Z2h1d3J5Y3lxcXB2aHN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjkwOTA3ODcsImV4cCI6MjA0NDY2Njc4N30.pYG9V2Xo2uJZdNveeootOX45rrPsH_cdkdbkL-90ak8';
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+    let editingVehicleId = null;
+    let existingImages = [];
+
+    function showLoading() {
+        document.getElementById('loadingOverlay').classList.remove('hidden');
+        document.getElementById('loadingOverlay').classList.add('flex');
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('loadingOverlay').classList.remove('flex');
+    }
+
+    function previewExistingImages(images) {
+        const previewContainer = document.getElementById('existingImagePreview');
+        previewContainer.innerHTML = '';
+
+        images.forEach((imageUrl, index) => {
+            const imgWrapper = document.createElement('div');
+            imgWrapper.classList.add('relative');
+
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.classList.add('preview-image', 'w-full', 'h-24', 'object-cover', 'rounded');
+            
+            const removeButton = document.createElement('button');
+            removeButton.innerText = 'X';
+            removeButton.classList.add('absolute', 'top-0', 'right-0', 'bg-red-600', 'text-white', 'px-2', 'py-1', 'rounded');
+            removeButton.onclick = () => removeExistingImage(index);
+
+            imgWrapper.appendChild(img);
+            imgWrapper.appendChild(removeButton);
+            previewContainer.appendChild(imgWrapper);
+        });
+    }
+
+    function removeExistingImage(index) {
+        existingImages.splice(index, 1);
+        previewExistingImages(existingImages);
+    }
+
+    function previewNewImages(input) {
+        const previewContainer = document.getElementById('imagePreview');
+        previewContainer.innerHTML = '';
+
+        if (input.files) {
+            Array.from(input.files).forEach((file) => {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.classList.add('preview-image', 'w-full', 'h-24', 'object-cover', 'rounded');
+                    previewContainer.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    }
+
+    async function almacenarImagenEnImgBB(imageFile) {
+        const formData = new FormData();
+        formData.append("image", imageFile);
+
+        try {
+            const response = await fetch("https://api.imgbb.com/1/upload?key=1546c299417598ed2635d567ce946b2b", {
+                method: "POST",
+                body: formData,
+            });
+            const data = await response.json();
+            console.log('Imagen cargada en ImgBB:', data);
+            return data.data.display_url;
+        } catch (error) {
+            console.error('Error al cargar la imagen en ImgBB:', error);
+            throw error;
+        }
+    }
+
+    async function uploadImagesToImgBB() {
+        const input = document.getElementById('fotos');
+        const files = input.files;
+        if (!files || files.length === 0) {
+            return [];
+        }
+
+        const uploadedUrls = [];
+        for (const file of files) {
+            try {
+                const url = await almacenarImagenEnImgBB(file);
+                uploadedUrls.push(url);
+            } catch (err) {
+                console.error('Error al subir imagen a ImgBB:', err);
+            }
+        }
+        return uploadedUrls;
+    }
+
+    async function guardarDatosVehiculo(event) {
+        event.preventDefault();
+        showLoading();
+
+        const nuevasImagenesUrls = await uploadImagesToImgBB();
+        const imagenesFinales = [...existingImages, ...nuevasImagenesUrls];
+
+        const datosVehiculo = {
+            vehiculo_ingreso: document.getElementById('vehiculoIngreso').value,
+            modelo: document.getElementById('modelo').value,
+            kilometraje: document.getElementById('kilometraje').value,
+            ficha_tecnica: document.getElementById('fichaTecnica').value,
+            cantidad_cuota: document.getElementById('cantidadCuotas').value,
+            valor_cuota: document.getElementById('valorCuotas').value,
+            fotos: imagenesFinales,
+        };
+
+        let result;
+        if (editingVehicleId) {
+            result = await supabaseClient
+                .from('vehiculos')
+                .update(datosVehiculo)
+                .eq('id', editingVehicleId);
+        } else {
+            result = await supabaseClient
+                .from('vehiculos')
+                .insert([datosVehiculo]);
+        }
+
+        hideLoading();
+
+        if (result.error) {
+            console.error("Error al guardar los datos:", result.error);
+            alert("Error al guardar los datos. Por favor, intente nuevamente.");
+        } else {
+            console.log("Datos guardados con éxito");
+            const vehiculoId = editingVehicleId || result.data[0].id;
+            generarEnlaceEncriptado(vehiculoId);
+            loadVehicles();
+            resetForm();
+        }
+    }
+
+    async function loadVehicles() {
+        showLoading();
+        const { data, error } = await supabaseClient
+            .from('vehiculos')
+            .select('*')
+            .order('id', { ascending: false });
+
+        hideLoading();
+
+        if (error) {
+            console.error('Error al cargar los vehículos:', error);
+            return;
+        }
+
+        const vehicleList = document.getElementById('vehiculosListItems');
+        vehicleList.innerHTML = '';
+
+        data.forEach(vehicle => {
+            const li = document.createElement('li');
+            li.className = 'py-4';
+            li.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-lg font-semibold">${vehicle.vehiculo_ingreso} - ${vehicle.modelo}</span>
+                    <div>
+                        <button onclick="editVehicle(${vehicle.id})" class="text-blue-600 hover:text-blue-800 mr-2">Editar</button>
+                        <button onclick="showDuplicateModal(${vehicle.id})" class="text-green-600 hover:text-green-800 mr-2">Duplicar</button>
+                        <button onclick="deleteVehicle(${vehicle.id})" class="text-red-600 hover:text-red-800">Eliminar</button>
+                        <button onclick="generarEnlaceEncriptado(${vehicle.id})" class="text-purple-600 hover:text-purple-800">Generar Enlace</button>
+                    </div>
+                </div>
+                <p class="text-gray-600">Kilometraje: ${vehicle.kilometraje} km</p>
+                <p class="text-gray-600">Valor de cuota: $${vehicle.valor_cuota} x ${vehicle.cantidad_cuota} cuotas</p>
+            `;
+            vehicleList.appendChild(li);
+        });
+    }
+
+    async function editVehicle(id) {
+        showLoading();
+        const { data, error } = await supabaseClient
+            .from('vehiculos')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        hideLoading();
+
+        if (error) {
+            console.error('Error al obtener el vehículo:', error);
+            return;
+        }
+
+        document.getElementById('vehiculoIngreso').value = data.vehiculo_ingreso;
+        document.getElementById('modelo').value = data.modelo;
+        document.getElementById('kilometraje').value = data.kilometraje;
+        document.getElementById('fichaTecnica').value = data.ficha_tecnica;
+        document.getElementById('valorCuotas').value = data.valor_cuota;
+        document.getElementById('cantidadCuotas').value = data.cantidad_cuota;
+
+        existingImages = data.fotos || [];
+        previewExistingImages(existingImages);
+
+        editingVehicleId = id;
+        document.getElementById('submitButtonText').textContent = 'Actualizar Vehículo';
+        window.scrollTo(0, 0);
+    }
+
+    async function showDuplicateModal(id) {
+        showLoading();
+        const { data, error } = await supabaseClient
+            .from('vehiculos')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        hideLoading();
+
+        if (error) {
+            console.error('Error al obtener el vehículo:', error);
+            return;
+        }
+
+        const modal = document.getElementById('duplicateModal');
+        const form = document.getElementById('duplicateForm');
+        form.innerHTML = ''; // Clear previous content
+
+        // Create form fields
+        const fields = ['vehiculo_ingreso', 'modelo', 'kilometraje', 'ficha_tecnica', 'cantidad_cuota', 'valor_cuota'];
+        fields.forEach(field => {
+            const label = document.createElement('label');
+            label.textContent = field.replace('_', ' ').charAt(0).toUpperCase() + field.replace('_', ' ').slice(1);
+            label.className = 'block text-sm font-medium text-gray-700 mt-2';
+
+            const input = document.createElement('input');
+            input.type = field === 'kilometraje' || field === 'cantidad_cuota' || field === 'valor_cuota' ? 'number' : 'text';
+            input.name = field;
+            input.value = data[field];
+            input.className = 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50';
+
+            form.appendChild(label);
+            form.appendChild(input);
+        });
+
+        // Add hidden field for fotos
+        const fotosInput = document.createElement('input');
+        fotosInput.type = 'hidden';
+        fotosInput.name = 'fotos';
+        fotosInput.value = data.fotos.join(',');
+        form.appendChild(fotosInput);
+
+        // Add submit button
+        const submitButton = document.createElement('button');
+        submitButton.type = 'submit';
+        submitButton.textContent = 'Duplicar Vehículo';
+        submitButton.className = 'mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded';
+        form.appendChild(submitButton);
+
+        // Show image previews
+        const previewContainer = document.createElement('div');
+        previewContainer.className = 'grid grid-cols-4 gap-2 mt-4';
+        
+        data.fotos.forEach(url => {
+            const img = document.createElement('img');
+            img.src = url;
+            img.className = 'w-full h-24 object-cover rounded';
+            previewContainer.appendChild(img);
+        });
+        form.appendChild(previewContainer);
+
+        // Set up form submission
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            duplicateVehicle(e.target);
+        };
+
+        modal.style.display = 'block';
+    }
+
+    async function duplicateVehicle(form) {
+        showLoading();
+        const formData = new FormData(form);
+        const vehicleData = Object.fromEntries(formData.entries());
+        vehicleData.fotos = vehicleData.fotos.split(',').map(url => url.trim());
+        vehicleData.es_duplicado = true;
+
+        const { data, error } = await supabaseClient
+            .from('vehiculos')
+            .insert([vehicleData]);
+
+        hideLoading();
+
+        if (error) {
+            console.error('Error al duplicar el vehículo:', error);
+            alert('Error al duplicar el vehículo. Por favor, intente nuevamente.');
+        } else {
+            console.log('Vehículo duplicado con éxito:', data);
+            document.getElementById('duplicateModal').style.display = 'none';
+            loadVehicles();
+            alert('Vehículo duplicado con éxito.');
+        }
+    }
+
+    async function deleteVehicle(id) {
+        if (confirm('¿Está seguro de que desea eliminar este vehículo?')) {
+            showLoading();
+            const { error } = await supabaseClient
+                .from('vehiculos')
+                .delete()
+                .eq('id', id);
+
+            hideLoading();
+
+            if (error) {
+                console.error('Error al eliminar el vehículo:', error);
+                alert('Error al eliminar el vehículo. Por favor, intente nuevamente.');
+            } else {
+                console.log('Vehículo eliminado con éxito');
+                loadVehicles();
+                alert('Vehículo eliminado con éxito.');
+            }
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('vehicleForm').reset();
+        document.getElementById('imagePreview').innerHTML = '';
+        document.getElementById('existingImagePreview').innerHTML = '';
+        editingVehicleId = null;
+        existingImages = [];
+        document.getElementById('submitButtonText').textContent = 'Guardar Vehículo';
+        document.getElementById('successBanner').classList.add('hidden');
+    }
+
+    function generarEnlaceEncriptado(vehiculoId) {
+        showLoading();
+        const enlace = `https://tu-dominio.com/formulario-cliente?id=${vehiculoId}`;
+        const enlaceEncriptado = CryptoJS.AES.encrypt(enlace, 'clave-secreta').toString();
+        const formLink = document.getElementById('formLink');
+        formLink.href = `https://tu-dominio.com/redireccion?enlace=${encodeURIComponent(enlaceEncriptado)}`;
+        formLink.textContent = formLink.href;
+        document.getElementById('successBanner').classList.remove('hidden');
+        hideLoading();
+    }
+
+    // Event Listeners
+    document.getElementById('vehicleForm').addEventListener('submit', guardarDatosVehiculo);
+    window.addEventListener('load', loadVehicles);
+
+    // Cerrar el modal
+    document.querySelector('.close').onclick = function() {
+        document.getElementById('duplicateModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('duplicateModal')) {
+            document.getElementById('duplicateModal').style.display = 'none';
+        }
+    }
+    </script>
+</body>
+</html>
