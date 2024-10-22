@@ -542,10 +542,10 @@
 
     function generarEnlaceEncriptado(vehiculoId) {
         showLoading();
-        const enlace = `https://tu-dominio.com/formulario-cliente?id=${vehiculoId}`;
+        const enlace = `https://auto-info.netlify.app/?vehiculo=${vehiculoId}`;
         const enlaceEncriptado = CryptoJS.AES.encrypt(enlace, 'clave-secreta').toString();
         const formLink = document.getElementById('formLink');
-        formLink.href = `https://tu-dominio.com/redireccion?enlace=${encodeURIComponent(enlaceEncriptado)}`;
+        formLink.href = `https://auto-info.netlify.app/?vehiculo=${encodeURIComponent(enlaceEncriptado)}`;
         formLink.textContent = formLink.href;
         document.getElementById('successBanner').classList.remove('hidden');
         hideLoading();
