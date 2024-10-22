@@ -17,6 +17,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
    <style>
               body {
             font-family: 'Inter', sans-serif;
@@ -113,15 +114,34 @@
             align-items: center;
             z-index: 1000;
         }
-        .vehicle-preview-content {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 12px;
-            max-width: 90%;
-            max-height: 90%;
-            overflow-y: auto;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
+.vehicle-preview-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 50%;
+    max-height: 90%;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Estilos para pantallas pequeñas */
+@media (max-width: 600px) {
+    .vehicle-preview-content {
+        padding: 1rem;
+        max-width: 90%;
+        max-height: 100%;
+    }
+}
+
+/* Estilos para pantallas medianas */
+@media (min-width: 601px) and (max-width: 1024px) {
+    .vehicle-preview-content {
+        padding: 1.5rem;
+        max-width: 95%;
+        max-height: 95%;
+    }
+}
+
         .close-preview {
             position: absolute;
             top: 1rem;
@@ -231,6 +251,146 @@
         .gallery-image:hover {
             transform: scale(1.05);
         }
+        .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: var(--modal-background);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal.show {
+    display: flex;
+    opacity: 1;
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: auto;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 800px;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.modal.show .modal-content {
+    transform: scale(1);
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+}
+
+.gallery-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.gallery-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gallery-image:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.vehicle-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.info-item {
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.info-label {
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.share-button {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    width: 100%;
+}
+
+.share-button:hover {
+    background-color: #27ae60;
+    transform: translateY(-2px);
+}
+
+.share-button i {
+    margin-right: 0.5rem;
+}
+
+.dynamic-banner {
+    text-align: center;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .modal-content {
+        padding: 1rem;
+    }
+
+    .gallery-container {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+
+    .gallery-image {
+        height: 100px;
+    }
+}
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen py-8">
@@ -380,6 +540,9 @@
 
         <div class="max-w-4xl mx-auto px-4 mb-8">
             <div class="swiper-container">
+                <div class="p-4 border-b border-gray-200">
+                    <h1 class="text-xl font-semibold text-gray-900">Vehículos</h1>
+                </div>
                 <div class="swiper-wrapper">
                     <!-- Carousel items will be dynamically added here -->
                 </div>
@@ -454,14 +617,6 @@
         // Initialize Feather Icons
         feather.replace();
     
-        // Function to get URL parameters
-        function getUrlParameter(name) {
-            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-            var results = regex.exec(location.search);
-            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
-        }
-    
         async function almacenarImagenEnImgBB(imageFile, side) {
             const formData = new FormData();
             formData.append("image", imageFile);
@@ -483,28 +638,65 @@
             }
         }
     
-        // Function to load vehicle information
-        async function cargarInformacionVehiculo() {
-    const vehiculoId = getUrlParameter('vehiculo');
+        function desencriptarEnlace(enlaceEncriptado) {
+    const claveSecreta = 'clave-secreta'; // Debes usar la misma clave secreta utilizada para encriptar
+    const bytes = CryptoJS.AES.decrypt(enlaceEncriptado, claveSecreta);
+    const enlaceDesencriptado = bytes.toString(CryptoJS.enc.Utf8);
+    return enlaceDesencriptado;
+}
+
+async function cargarEnlace() {
+    const enlaceEncriptado = getUrlParameter('vehiculo'); // Cambia 'enlace' a 'vehiculo'
+    if (enlaceEncriptado) {
+        const enlaceDesencriptado = desencriptarEnlace(enlaceEncriptado);
+        console.log('Enlace desencriptado:', enlaceDesencriptado);
+
+        // Extraer solo el ID del vehículo de la URL
+        const vehiculoId = new URL(enlaceDesencriptado).searchParams.get('id');
+        console.log('ID del vehículo extraído:', vehiculoId);
+
+        if (vehiculoId && !isNaN(vehiculoId)) {
+            // Aquí puedes redirigir o hacer lo que necesites con el ID del vehículo
+            await cargarInformacionVehiculo(vehiculoId); 
+           // await mostrarInteresados(vehiculoId);// Cargar información usando el ID
+        } else {
+            console.error('ID del vehículo no válido:', vehiculoId);
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    cargarEnlace();
+});
+
+// Function to get URL parameters
+function getUrlParameter(name) {
+    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+    var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+    var results = regex.exec(location.search);
+    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+}
+
+// Function to load vehicle information
+async function cargarInformacionVehiculo(vehiculoId) { // Agregamos vehiculoId como parámetro
     if (vehiculoId) {
         try {
             const { data: vehiculoData, error: vehiculoError } = await supabaseClient
                 .from('vehiculos')
                 .select('*')
-                .eq('id', vehiculoId)
+                .eq('id', vehiculoId) // Usamos vehiculoId aquí
                 .single();
 
             if (vehiculoError) throw vehiculoError;
 
             if (vehiculoData) {
+                console.log('Datos del vehículo:', vehiculoData); // Para depuración
 
-                        console.log('Datos del vehículo:', vehiculoData); // Para depuración
-
-                        // Update metadata
-                        document.getElementById('ogTitle').setAttribute('content', `${vehiculoData.vehiculo_ingreso} en venta`);
-                        document.getElementById('ogDescription').setAttribute('content', `${vehiculoData.modelo} - ${vehiculoData.kilometraje} km - ${vehiculoData.ficha_tecnica}`);
-                        document.getElementById('ogUrl').setAttribute('content', window.location.href);
-                
+                // Update metadata
+                document.getElementById('ogTitle').setAttribute('content', `${vehiculoData.vehiculo_ingreso} en venta`);
+                document.getElementById('ogDescription').setAttribute('content', `${vehiculoData.modelo} - ${vehiculoData.kilometraje} km - ${vehiculoData.ficha_tecnica}`);
+                document.getElementById('ogUrl').setAttribute('content', window.location.href);
+            
                 // Mostrar información del vehículo
                 const vehiculoInfo = document.getElementById('vehiculoInfo');
                 vehiculoInfo.innerHTML = `
@@ -526,11 +718,10 @@
                     img.onclick = () => openModal(url);
                     imagenesContainer.appendChild(img);
 
-                                                // Set the first image as metadata for sharing
-                            if (index === 0) {
-                                document.getElementById('ogImage').setAttribute('content', url);
-                            }
-                    
+                    // Set the first image as metadata for sharing
+                    if (index === 0) {
+                        document.getElementById('ogImage').setAttribute('content', url);
+                    }
                 });
 
                 // Actualizar campos del formulario
@@ -552,6 +743,8 @@
         }
     }
 }
+
+
     
         // Function to open image modal
         function openModal(imgSrc) {
@@ -569,36 +762,82 @@
                 this.classList.remove('flex');
             }
         });
-    
-        // Function to verify if the vehicle is already reserved
-        async function verificarVehiculoSenado() {
-            const vehiculoId = getUrlParameter('vehiculo');
-            if (vehiculoId) {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('clientes')
-                        .select('*')
-                        .eq('vehiculo_id', vehiculoId)
-                        .single();
-    
-                    if (error && error.code !== 'PGRST116') throw error;
-    
-                    if (data) {
-                        document.getElementById('vehiculoSenado').classList.remove('hidden');
-                        document.getElementById('formContainer').classList.add('hidden');
-                        document.getElementById('vehiculoSenadoa').classList.add('hidden');
-                    } else {
-                        document.getElementById('vehiculoSenadoa').classList.remove('hidden');
-                    }
-                } catch (error) {
-                    console.error('Error al verificar si el vehículo está señado:', error);
-                }
-            }
+
+
+async function mostrarInteresados(vehiculoId) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('interested_users')
+            .select('name')
+            .eq('vehiculo_id', vehiculoId);
+
+        if (error) throw error;
+
+        const interesadosLista = document.getElementById('interesadosLista');
+        interesadosLista.innerHTML = '';
+
+        if (data.length > 0) {
+            const lista = document.createElement('ul');
+            lista.className = 'list-disc pl-5';
+            data.forEach(usuario => {
+                const item = document.createElement('li');
+                item.textContent = usuario.name;
+                item.className = 'mb-2';
+                lista.appendChild(item);
+            });
+            interesadosLista.appendChild(lista);
+        } else {
+            interesadosLista.innerHTML = '<p>No hay usuarios interesados aún.</p>';
         }
+
+        document.getElementById('interesadosModal').classList.remove('hidden');
+        document.getElementById('interesadosModal').classList.add('flex');
+    } catch (error) {
+        console.error('Error al obtener los usuarios interesados:', error);
+        alert('Error al cargar los usuarios interesados. Por favor, intente nuevamente.');
+    }
+}
+
+// Evento para cerrar el modal
+document.getElementById('cerrarModalBtn').addEventListener('click', function() {
+    document.getElementById('interesadosModal').classList.add('hidden');
+    document.getElementById('interesadosModal').classList.remove('flex');
+});
+
+// Cerrar el modal si se hace clic fuera de él
+document.getElementById('interesadosModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.add('hidden');
+        this.classList.remove('flex');
+    }
+});
     
         // Function to update interested users count
   
-        
+        document.getElementById('interestedUsersBtn').addEventListener('click', async function() {
+    const vehiculoEncriptado = getUrlParameter('vehiculo'); // Suponiendo que esta función obtiene el parámetro encriptado de la URL
+
+    if (vehiculoEncriptado) {
+        try {
+            // Desencriptar el ID del vehículo
+            const vehiculoDesencriptado = desencriptarEnlace(vehiculoEncriptado); // Reemplaza esto con tu lógica de desencriptación
+            const vehiculoId = new URL(vehiculoDesencriptado).searchParams.get('id'); // Extraer ID
+
+            if (vehiculoId && !isNaN(vehiculoId)) {
+                // Convertir vehiculoId a número entero
+                await mostrarInteresados(parseInt(vehiculoId)); // Llama a la función con el ID correcto
+            } else {
+                console.error('ID del vehículo no válido:', vehiculoId);
+            }
+        } catch (error) {
+            console.error('Error al desencriptar el ID del vehículo:', error);
+            alert('No se pudo cargar los interesados. Inténtalo de nuevo más tarde.');
+        }
+    } else {
+        console.error('No se encontró el ID del vehículo en la URL.');
+    }
+});
+
     
     
         // Event listener for "Me Interesa" button
@@ -770,8 +1009,7 @@
                     clientInfoContent.innerHTML = `
                         <p><strong>Nombre:</strong> ${nombre}</p>
                         <p><strong>Apellido:</strong> ${apellido}</p>
-                        <p><strong>Documento:</strong> 
-     ${clientData.numero_documento}</p>
+                        <p><strong>Documento:</strong> ${clientData.numero_documento}</p>
                         <p><strong>Teléfono:</strong> ${clientData.telefono}</p>
                         <p><strong>Estado:</strong> ${clientData.estado}</p>
                         <p><strong>Fecha de Pago:</strong> ${new Date(clientData.fecha_registro).toLocaleDateString()}</p>
@@ -947,75 +1185,73 @@
             });
         }
 
-        document.getElementById('interestedUsersBtn').addEventListener('click', function() {
-    const vehiculoId = getUrlParameter('vehiculo');
-    if (vehiculoId) {
-        mostrarInteresados(vehiculoId);
-    }
-});
+        async function loadVehicleCarousel() {
+    try {
+        // Modificar la consulta para excluir duplicados (donde es_duplicado no es "true" o es NULL)
+        const { data, error } = await supabaseClient
+            .from('vehiculos')
+            .select('*')
+            .or('es_duplicado.is.null,es_duplicado.eq.false') // Incluir NULL o valores diferentes a true
+            .order('id', { ascending: false })
+            //.limit(10);
 
+        if (error) throw error;
 
-async function loadVehicleCarousel() {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('vehiculos')
-                    .select('*')
-                    .order('id', { ascending: false })
-                    .limit(10);
+        const swiperWrapper = document.querySelector('.swiper-wrapper');
+        swiperWrapper.innerHTML = '';
 
-                if (error) throw error;
-
-                const swiperWrapper = document.querySelector('.swiper-wrapper');
-                swiperWrapper.innerHTML = '';
-
-                data.forEach(vehicle => {
-                    const slide = document.createElement('div');
-                    slide.className = 'swiper-slide';
-                    slide.innerHTML = `
-                        <div class="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
-                            <img src="${vehicle.fotos[0]}" alt="${vehicle.vehiculo_ingreso}" class="w-full h-56 object-cover">
-                            <div class="p-6">
-                                <h3 class="text-xl font-semibold mb-2 text-gray-800">${vehicle.vehiculo_ingreso}</h3>
-                                <p class="text-sm text-gray-600 mb-4">${vehicle.modelo} - ${vehicle.kilometraje} km</p>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm font-medium text-gray-500">Vistas: ${vehicle.views || 0}</span>
-                                    <button onclick="showVehiclePreview(${vehicle.id})" class="bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition duration-300 transform hover:scale-105">Ver más</button>
-                                </div>
-                            </div>
+        data.forEach(vehicle => {
+            const slide = document.createElement('div');
+            slide.className = 'swiper-slide';
+            slide.innerHTML = `
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
+                    <img src="${vehicle.fotos[0]}" alt="${vehicle.vehiculo_ingreso}" class="w-full h-56 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold mb-2 text-gray-800">${vehicle.vehiculo_ingreso}</h3>
+                        <p class="text-sm text-gray-600 mb-4">${vehicle.modelo} - ${vehicle.kilometraje} km</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium text-gray-500">Vistas: ${vehicle.views || 0}</span>
+                            <button onclick="showVehiclePreview(${vehicle.id})" class="bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition duration-300 transform hover:scale-105">Ver más</button>
                         </div>
-                    `;
-                    swiperWrapper.appendChild(slide);
-                });
+                    </div>
+                </div>
+            `;
+            swiperWrapper.appendChild(slide);
+        });
 
-                // Initialize or update Swiper
-                if (window.swiper) {
-                    window.swiper.destroy();
-                }
-                window.swiper = new Swiper('.swiper-container', {
-                    slidesPerView: 1,
-                    spaceBetween: 20,
-                    loop: true,
-                    pagination: {
-                        el: '.swiper-pagination',
-                        clickable: true,
-                    },
-                    navigation: {
-                        nextEl: '.swiper-button-next',
-                        prevEl: '.swiper-button-prev',
-                    },
-                    breakpoints: {
-                        640: {
-                            slidesPerView: 2,
-                        },
-                        1024: {
-                            slidesPerView: 3,
-                        },
-                    },
-                });
-            } catch (error) {
-                console.error('Error loading vehicle carousel:', error);
-            }
+        // Initialize or update Swiper
+        if (window.swiper) {
+            window.swiper.destroy();
         }
+        window.swiper = new Swiper('.swiper-container', {
+            slidesPerView: 1,
+            spaceBetween: 20,
+            loop: true,
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            breakpoints: {
+                640: {
+                    slidesPerView: 2,
+                },
+                1024: {
+                    slidesPerView: 3,
+                },
+            },
+        });
+    } catch (error) {
+        console.error('Error loading vehicle carousel:', error);
+    }
+}
+
+// Load the carousel when the page loads
+document.addEventListener('DOMContentLoaded', loadVehicleCarousel);
+
 
         function getDynamicBanner(interestedUsers) {
             const messages = [
@@ -1034,62 +1270,105 @@ async function loadVehicleCarousel() {
             }
         }
 
-        async function showVehiclePreview(vehicleId) {
-            try {
-                const { data: vehicle, error } = await supabaseClient
-                    .from('vehiculos')
-                    .select('*')
-                    .eq('id', vehicleId)
-                    .single();
 
-                if (error) throw error;
+async function showVehiclePreview(vehicleId) {
+    try {
+        const { data: vehicle, error } = await supabaseClient
+            .from('vehiculos')
+            .select('*')
+            .eq('id', vehicleId)
+            .single();
 
-                // Obtener el conteo de usuarios interesados
-                const { count: interestedUsers, error: countError } = await supabaseClient
-                    .from('interested_users')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('vehiculo_id', vehicleId);
+        if (error) throw error;
 
-                if (countError) throw countError;
+        const { count: interestedUsers, error: countError } = await supabaseClient
+            .from('interested_users')
+            .select('*', { count: 'exact', head: true })
+            .eq('vehiculo_id', vehicleId);
 
-                const dynamicBanner = getDynamicBanner(interestedUsers);
+        if (countError) throw countError;
 
-                const previewContent = document.getElementById('previewContent');
-                previewContent.innerHTML = `
-                    ${dynamicBanner}
-                    <h2 class="text-3xl font-bold mb-6 text-gray-800">${vehicle.vehiculo_ingreso}</h2>
-                    <img src="${vehicle.fotos[0]}" alt="${vehicle.vehiculo_ingreso}" class="w-full h-80 object-cover mb-6 rounded-lg shadow-md">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div>
-                            <p class="mb-2"><strong class="text-gray-700">Modelo:</strong> <span class="text-gray-600">${vehicle.modelo}</span></p>
-                            <p class="mb-2"><strong class="text-gray-700">Kilometraje:</strong> <span class="text-gray-600">${vehicle.kilometraje} km</span></p>
-                        </div>
-                        <div>
-                            <p class="mb-2"><strong class="text-gray-700">Ficha Técnica:</strong></p>
-                            <p class="text-gray-600">${vehicle.ficha_tecnica}</p>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center mb-6">
-                        <span class="text-lg font-medium text-gray-700">Interesados: <span class="text-blue-600">${interestedUsers}</span></span>
-                        <button onclick="shareVehicle(${vehicle.id})" class="bg-green-500 text-white px-6 py-3 rounded-md text-lg font-medium hover:bg-green-600 transition duration-300 transform hover:scale-105 flex items-center">
-                            <i data-feather="share-2" class="mr-2"></i>
-                            Compartir por WhatsApp
-                        </button>
-                    </div>
-                    <h3 class="text-2xl font-semibold mb-4 text-gray-800">Galería de imágenes</h3>
-                    <div class="gallery-container">
-                        ${vehicle.fotos.map(foto => `
-                            <img src="${foto}" alt="Imagen del vehículo" class="gallery-image" onclick="openModal('${foto}')">
-                        `).join('')}
-                    </div>
-                `;
+        const dynamicBanner = getDynamicBanner(interestedUsers);
 
-                document.getElementById('vehiclePreview').style.display = 'flex';
-                feather.replace();
-            } catch (error) {
-                console.error('Error showing vehicle preview:', error);
-            }
-        }
+        const previewContent = document.getElementById('previewContent');
+        previewContent.innerHTML = `
+            ${dynamicBanner}
+            <h2>${vehicle.vehiculo_ingreso}</h2>
+            <div class="gallery-container">
+                ${vehicle.fotos.map(foto => `
+                    <img src="${foto}" alt="Imagen del vehículo" class="gallery-image" onclick="openModal('${foto}')">
+                `).join('')}
+            </div>
+            <div class="vehicle-info">
+                <div class="info-item">
+                    <span class="info-label">Modelo:</span> ${vehicle.modelo}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Kilometraje:</span> ${vehicle.kilometraje} km
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Ficha Técnica:</span>
+                    <p>${vehicle.ficha_tecnica}</p>
+                </div>
+            </div>
+            <button onclick="shareVehicle(${vehicle.id})" class="share-button">
+                <i data-feather="share-2"></i>
+                Compartir por WhatsApp
+            </button>
+        `;
+
+        document.getElementById('vehiclePreview').style.display = 'flex';
+        feather.replace();
+    } catch (error) {
+        console.error('Error showing vehicle preview:', error);
+    }
+}
+
+function getDynamicBanner(interestedUsers) {
+    let message = '';
+    let color = '';
+
+    if (interestedUsers > 10) {
+        message = '¡Este vehículo está generando mucho interés!';
+        color = '#FF4136';
+    } else if (interestedUsers > 5) {
+        message = 'Este vehículo está ganando popularidad';
+        color = '#FF851B';
+    } else {
+        message = 'Sea de los primeros en mostrar interés en este vehículo';
+        color = '#2ECC40';
+    }
+
+    return `<div class="dynamic-banner" style="background-color: ${color};">${message}</div>`;
+}
+
+function openModal(imageSrc) {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImage');
+    modal.style.display = 'block';
+    modalImg.src = imageSrc;
+}
+
+function shareVehicle(vehicleId) {
+    const message = encodeURIComponent(`¡Mira este vehículo! https://yourdomain.com/vehicle/${vehicleId}`);
+    window.open(`https://wa.me/?text=${message}`, '_blank');
+}
+
+// Close modal when clicking on the close button or outside the modal
+window.onclick = function(event) {
+    const vehicleModal = document.getElementById('vehiclePreview');
+    const imageModal = document.getElementById('imageModal');
+    if (event.target == vehicleModal || event.target == imageModal) {
+        vehicleModal.style.display = 'none';
+        imageModal.style.display = 'none';
+    }
+}
+
+document.querySelectorAll('.close').forEach(closeBtn => {
+    closeBtn.onclick = function() {
+        this.parentElement.style.display = 'none';
+    }
+});
 
         // Función para abrir el modal con la imagen ampliada
         function openModal(imgSrc) {
@@ -1099,9 +1378,6 @@ async function loadVehicleCarousel() {
             modal.classList.add('flex');
             modalImg.src = imgSrc;
         }
-
-        // Asegúrate de llamar a loadVehicleCarousel cuando se carga la página
-        document.addEventListener('DOMContentLoaded', loadVehicleCarousel);
 
 
         // Function to close vehicle preview
