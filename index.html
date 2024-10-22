@@ -638,7 +638,7 @@
             }
         }
     
-        function desencriptarEnlace(enlaceEncriptado) {
+function desencriptarEnlace(enlaceEncriptado) {
     const claveSecreta = 'clave-secreta'; // Debes usar la misma clave secreta utilizada para encriptar
     const bytes = CryptoJS.AES.decrypt(enlaceEncriptado, claveSecreta);
     const enlaceDesencriptado = bytes.toString(CryptoJS.enc.Utf8);
@@ -650,15 +650,16 @@ async function cargarEnlace() {
     if (enlaceEncriptado) {
         const enlaceDesencriptado = desencriptarEnlace(enlaceEncriptado);
         console.log('Enlace desencriptado:', enlaceDesencriptado);
-
-        // Extraer solo el ID del vehículo de la URL
-        const vehiculoId = new URL(enlaceDesencriptado).searchParams.get('id');
+        
+        // Asegurarnos de que el enlace desencriptado contiene el ID del vehículo
+        const url = new URL(enlaceDesencriptado);
+        const vehiculoId = url.searchParams.get('vehiculo');
+        
         console.log('ID del vehículo extraído:', vehiculoId);
-
         if (vehiculoId && !isNaN(vehiculoId)) {
             // Aquí puedes redirigir o hacer lo que necesites con el ID del vehículo
-            await cargarInformacionVehiculo(vehiculoId); 
-           // await mostrarInteresados(vehiculoId);// Cargar información usando el ID
+            await cargarInformacionVehiculo(vehiculoId);
+            // await mostrarInteresados(vehiculoId);// Cargar información usando el ID
         } else {
             console.error('ID del vehículo no válido:', vehiculoId);
         }
@@ -676,6 +677,7 @@ function getUrlParameter(name) {
     var results = regex.exec(location.search);
     return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
 }
+
 
 // Function to load vehicle information
 async function cargarInformacionVehiculo(vehiculoId) { // Agregamos vehiculoId como parámetro
