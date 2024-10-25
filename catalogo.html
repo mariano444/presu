@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Vehículos Premium</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@latest/dist/umd/supabase.min.js"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: rgb(249, 250, 251);
+        }
+
+        .vehicle-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: white;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .vehicle-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.75);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: #ffffff;
+            margin: 5% auto;
+            padding: 2rem;
+            border: none;
+            width: 90%;
+            max-width: 900px;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .image-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            border-radius: 1rem;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .nav-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-button:hover {
+            background-color: white;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .prev { left: 1rem; }
+        .next { right: 1rem; }
+
+        .thumbnail-gallery {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            padding: 1rem 0;
+            scrollbar-width: thin;
+            scrollbar-color: #3b82f6 #f0f0f0;
+        }
+
+        .thumbnail-gallery::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .thumbnail-gallery::-webkit-scrollbar-track {
+            background: #f0f0f0;
+            border-radius: 3px;
+        }
+
+        .thumbnail-gallery::-webkit-scrollbar-thumb {
+            background-color: #3b82f6;
+            border-radius: 3px;
+        }
+
+        .thumbnail {
+            width: 100px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .thumbnail:hover {
+            transform: scale(1.05);
+        }
+
+        .thumbnail.active {
+            border: 2px solid #3b82f6;
+        }
+
+        .banner {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            color: white;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .user-banner {
+            background: linear-gradient(135deg, #4a00e0, #8e2de2, #4a00e0);
+            background-size: 200% 200%;
+            animation: gradientBG 5s ease infinite;
+            color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #userGreeting {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        #availableVehicles {
+            font-size: 1.2rem;
+        }
+
+        .vehicle-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .vehicle-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+        <div class="user-banner">
+            <h2 id="userGreeting"></h2>
+            <p id="availableVehicles"></p>
+        </div>
+        <h1 class="text-4xl font-bold text-center mb-12 text-gray-800">Autos usados</h1>
+        
+        <div id="vehicleGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Vehicle cards will be dynamically inserted here -->
+        </div>
+
+        <div id="loadingSpinner" class="loading-spinner"></div>
+    </div>
+
+    <div id="notification" class="notification" role="alert" aria-live="polite"></div>
+
+    <!-- Enhanced Modal -->
+    <div id="vehicleModal" class="modal">
+        <div class="modal-content fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="modalTitle" class="text-3xl font-bold text-gray-800"></h2>
+                <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <i data-feather="x"></i>
+                </button>
+            </div>
+
+            <div id="dynamicBanner" class="mb-6 p-4 rounded-lg text-white text-center font-semibold"></div>
+
+            <div class="image-container">
+                <img id="mainImage" src="" alt="Vehículo" class="w-full h-full object-cover">
+                <button class="nav-button prev" onclick="changeImage(-1)">
+                    <i data-feather="chevron-left"></i>
+                </button>
+                <button class="nav-button next" onclick="changeImage(1)">
+                    <i data-feather="chevron-right"></i>
+                </button>
+            </div>
+
+            <div id="thumbnailGallery" class="thumbnail-gallery"></div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-gray-50 p-6 rounded-xl">
+                    <h3 class="text-xl font-semibold mb-4">Detalles del Vehículo</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Modelo</span>
+                            <span id="modalModel" class="font-semibold"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Kilometraje</span>
+                            <span id="modalKm" class="font-semibold"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Vistas</span>
+                            <span id="modalViews" class="font-semibold"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Interesados</span>
+                            <span id="modalInterested" class="font-semibold"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-6 rounded-xl">
+                    <h3 class="text-xl font-semibold mb-4">Ficha Técnica</h3>
+                    <p id="modalSpecs" class="text-gray-600 leading-relaxed"></p>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button onclick="shareVehicle()" class="flex-1 bg-green-500 text-white px-6 py-3 rounded-full hover:bg-green-600 transition duration-300 flex items-center justify-center gap-2">
+                    <i data-feather="share-2"></i>
+                    Compartir por WhatsApp
+                </button>
+                <button onclick="closeModal()" class="flex-1 bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition duration-300 flex items-center justify-center gap-2">
+                    <i data-feather="list"></i>
+                    Ver más vehículos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+            // Función para formatear la cantidad como moneda
+            function formatCurrency(amount) {
+            return amount.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+        }
+
+    // Initialize Supabase client
+    const supabaseUrl = 'https://ozxntghuwrycyqqpvhst.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96eG50Z2h1d3J5Y3lxcXB2aHN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjkwOTA3ODcsImV4cCI6MjA0NDY2Njc4N30.pYG9V2Xo2uJZdNveeootOX45rrPsH_cdkdbkL-90ak8';
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+    let currentPage = 0;
+    const VEHICLES_PER_PAGE = 10;
+    let isLoading = false;
+    let allVehiclesLoaded = false;
+    let currentVehicle = null;
+    let currentImageIndex = 0;
+
+    async function getInterestedCount(vehicleId) {
+    const { data, error } = await supabaseClient  // Correctly using supabaseClient
+        .from('interested_users')
+        .select('id')
+        .eq('vehiculo_id', vehicleId);
+
+    if (error) {
+        console.error('Error fetching interested users:', error);
+        return 0;
+    }
+
+    return data.length;
+}
+
+
+let userName = '';
+
+document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const userInfo = JSON.parse(decodeURIComponent(urlParams.get('user')));
+            userName = userInfo.name.split(' ')[0];
+
+            document.getElementById('userGreeting').textContent = `¡Bienvenido, ${userName}!`;
+
+            loadVehicles().then(count => {
+                document.getElementById('availableVehicles').textContent = `Hemos seleccionado autos usados exclusivos para vos, basados en tu presupuesto de ${formatCurrency(parseInt(userInfo.payment))} mensuales.`;
+                showNotification(`${userName}, tenemos vehículos que se ajustan perfectamente a tus necesidades.`);
+            });
+
+            feather.replace();
+        });
+
+
+function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
+function formatCurrency(amount) {
+    return amount.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+}
+
+
+function shareVehicle() {
+    const userInfo = JSON.parse(decodeURIComponent(new URLSearchParams(window.location.search).get('user')));
+    const message = encodeURIComponent(`¡Hola! Soy ${userInfo.name} y estoy muy interesado en este ${currentVehicle.vehiculo_ingreso} (${currentVehicle.modelo}). Me encantaría saber más sobre las opciones de financiamiento personalizadas que tienen disponibles.`);
+    window.open(`https://wa.me/3518145289?text=${message}`, '_blank');
+    showNotification(`¡Excelente elección, ${userName}! Nuestro equipo estará encantado de ayudarte con este ${currentVehicle.vehiculo_ingreso}.`);
+}
+
+
+function createVehicleCard(vehicle, interestedCount) {
+            const card = document.createElement('div');
+            card.className = 'vehicle-card bg-white rounded-lg overflow-hidden shadow-lg';
+
+            const bannerHTML = (vehicle.views > 10 || interestedCount > 5)
+                ? `<div class="absolute top-0 right-0 bg-red-500 text-white px-2 py-1 m-2 rounded-full text-sm font-bold">
+                       ${vehicle.views > 10 ? '¡Popular!' : '¡Muy solicitado!'}
+                   </div>`
+                : '';
+
+            card.innerHTML = `
+                <div class="relative">
+                    ${bannerHTML}
+                    <img src="${vehicle.fotos[0]}" alt="${vehicle.vehiculo_ingreso}" 
+                         class="w-full h-48 object-cover">
+                </div>
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold mb-2 text-gray-800">${vehicle.vehiculo_ingreso}</h2>
+                    <p class="text-gray-600 mb-4">${vehicle.modelo} - ${vehicle.kilometraje.toLocaleString()} km</p>
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="flex items-center text-sm text-gray-500">
+                            <i data-feather="eye" class="w-4 h-4 mr-1"></i>
+                            ${vehicle.views || 0} vistas
+                        </span>
+                        <span class="flex items-center text-sm text-gray-500">
+                            <i data-feather="users" class="w-4 h-4 mr-1"></i>
+                            ${interestedCount} interesados
+                        </span>
+                    </div>
+                    <button onclick="showVehicleDetails(${JSON.stringify(vehicle).replace(/"/g, '&quot;')}, ${interestedCount})"
+                            class="w-full bg-blue-500 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition duration-300 flex items-center justify-center gap-2">
+                        <i data-feather="info"></i>
+                        Ver detalles
+                    </button>
+                </div>
+            `;
+
+            feather.replace(card);
+            return card;
+        }
+
+
+        async function loadVehicles(page = 0) {
+            if (isLoading || allVehiclesLoaded) return;
+
+            isLoading = true;
+            document.getElementById('loadingSpinner').style.display = 'block';
+
+            try {
+                const { data: vehicles, error } = await supabaseClient
+                    .from('vehiculos')
+                    .select('*')
+                    .or('es_duplicado.is.null,es_duplicado.eq.false')
+                    .order('views', { ascending: false })
+                    .range(page * VEHICLES_PER_PAGE, (page + 1) * VEHICLES_PER_PAGE - 1);
+
+                if (error) throw error;
+
+                if (!vehicles || vehicles.length === 0) {
+                    allVehiclesLoaded = true;
+                    return;
+                }
+
+                const grid = document.getElementById('vehicleGrid');
+
+                for (const vehicle of vehicles) {
+                    const interestedCount = await getInterestedCount(vehicle.id);
+                    const card = createVehicleCard(vehicle, interestedCount);
+                    grid.appendChild(card);
+                }
+
+                currentPage++;
+                feather.replace();
+            } catch (error) {
+                console.error('Error al cargar vehículos:', error);
+            } finally {
+                isLoading = false;
+                document.getElementById('loadingSpinner').style.display = 'none';
+            }
+        }
+
+        function showVehicleDetails(vehicle, interestedCount) {
+            currentVehicle = vehicle;
+            currentImageIndex = 0;
+
+            document.getElementById('modalTitle').textContent = vehicle.vehiculo_ingreso;
+            document.getElementById('modalModel').textContent = vehicle.modelo;
+            document.getElementById('modalKm').textContent = `${vehicle.kilometraje.toLocaleString()} km`;
+            document.getElementById('modalViews').textContent = vehicle.views;
+            document.getElementById('modalInterested').textContent = interestedCount;
+
+            // Más lógica para el modal...
+            showNotification(`${userName}, este ${vehicle.vehiculo_ingreso} es perfecto para ti. ¡No dejes pasar esta oportunidad!`);
+        }
+
+
+        function showVehicleDetails(vehicle, interestedCount) {
+            currentVehicle = vehicle;
+            currentImageIndex = 0;
+            
+            document.getElementById('modalTitle').textContent = vehicle.vehiculo_ingreso;
+            document.getElementById('modalModel').textContent = vehicle.modelo;
+            document.getElementById('modalKm').textContent = `${vehicle.kilometraje.toLocaleString()} km`;
+            document.getElementById('modalViews').textContent = vehicle.views;
+            document.getElementById('modalInterested').textContent = interestedCount;
+            document.getElementById('modalSpecs').textContent = vehicle.ficha_tecnica;
+            
+            const banner = document.getElementById('dynamicBanner');
+            if (interestedCount > 10) {
+                banner.textContent = '¡Este vehículo está generando mucho interés!';
+                banner.className = 'bg-red-600 text-white p-4 rounded-lg text-center font-semibold';
+            } else if (interestedCount > 5) {
+                banner.textContent = 'Este vehículo está ganando popularidad';
+                banner.className = 'bg-orange-500 text-white p-4 rounded-lg text-center font-semibold';
+            } else {
+                banner.textContent = 'Sea de los primeros en mostrar interés en este vehículo';
+                banner.className = 'bg-green-500 text-white p-4 rounded-lg text-center font-semibold';
+            }
+
+            updateModalImages();
+            document.getElementById('vehicleModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            feather.replace();
+
+            showNotification(`${userName}, este ${vehicle.vehiculo_ingreso} es perfecto para ti. ¡No dejes pasar esta oportunidad!`);
+            sessionStorage.setItem('selectedVehicle', JSON.stringify(vehicle));
+        }
+
+        function updateModalImages() {
+            const mainImage = document.getElementById('mainImage');
+            const gallery = document.getElementById('thumbnailGallery');
+            
+            mainImage.src = currentVehicle.fotos[currentImageIndex];
+            gallery.innerHTML = currentVehicle.fotos.map((foto, index) => `
+                <img src="${foto}" 
+                     alt="Thumbnail ${index + 1}" 
+                     class="thumbnail ${index === currentImageIndex ? 'active' : ''}"
+                     onclick="setMainImage(${index})">
+            `).join('');
+        }
+
+        function setMainImage(index) {
+            currentImageIndex = index;
+            updateModalImages();
+        }
+
+        function changeImage(direction) {
+            currentImageIndex = (currentImageIndex + direction + currentVehicle.fotos.length) % currentVehicle.fotos.length;
+            updateModalImages();
+        }
+
+        function shareVehicle() {
+            const message = encodeURIComponent(`¡Mira este vehículo! ${window.location.origin}/vehicle/${currentVehicle.id}`);
+            window.open(`https://wa.me/?text=${message}`, '_blank');
+        }
+
+        function closeModal() {
+            document.getElementById('vehicleModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('vehicleModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+
+        window.addEventListener('scroll', () => {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
+                loadVehicles(currentPage);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+    loadVehicles();
+    feather.replace();
+});
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Parse user information from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const userInfo = JSON.parse(decodeURIComponent(urlParams.get('user')));
+
+            // Update the user banner
+            document.getElementById('userGreeting').textContent = `¡Bienvenido, ${userInfo.name}!`;
+
+            // Load vehicles and update available vehicles count
+            loadVehicles().then(count => {
+                document.getElementById('availableVehicles').textContent = `Tenemos vehículos disponibles para ti en base a tu presupuesto de ${formatCurrency(parseInt(userInfo.payment))} mensuales.`;
+            });
+
+            feather.replace();
+        });
+
+        function shareVehicle() { 
+    const userInfo = JSON.parse(decodeURIComponent(new URLSearchParams(window.location.search).get('user')));
+    let message = `¡Hola! Soy ${userInfo.name} y estoy interesado en este vehículo: ${currentVehicle.vehiculo_ingreso} (${currentVehicle.modelo}) ` +
+                  `y puedo abonar una cuota de ${formatCurrency(parseInt(userInfo.payment))}. ¿Podemos hablar sobre las opciones de financiamiento?\n\n`;
+
+    if (userInfo.payment) {
+        message += `Me interesa financiar un vehículo con cuotas de ${formatCurrency(parseInt(userInfo.payment))}.\n\n`;
+    }
+
+    switch (userInfo.entrega) {
+        case 'full':
+            message += 'Estoy interesado en financiación completa (100%).';
+            break;
+        case 'partial':
+            message += `Puedo dar un adelanto de ${userInfo.entrega ? formatCurrency(Number(userInfo.entrega)) : 'a convenir'}.`;
+            break;
+        case 'trade':
+            message += `Tengo un vehículo para dar como parte de pago. Detalles: ${userInfo.entrega}`;
+            break;
+    }
+
+    window.open(`https://wa.me/3518145289?text=${encodeURIComponent(message)}`, '_blank');
+}
+
+    </script>
+</body>
+</html>
