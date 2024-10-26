@@ -169,7 +169,10 @@
             to { opacity: 1; }
         }
         .user-banner {
-            background: linear-gradient(135deg, #4a00e0, #8e2de2, #4a00e0);
+            /*background: linear-gradient(135deg, #4a00e0, #8e2de2, #4a00e0);*/
+            --tw-gradient-from: #34d399;
+            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(52, 211, 153, 0));
+            background-image: linear-gradient(to right, var(--tw-gradient-stops));
             background-size: 200% 200%;
             animation: gradientBG 5s ease infinite;
             color: white;
@@ -245,11 +248,10 @@
 <body class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-7xl mx-auto">
         <div class="user-banner">
+            <h1 class="text-4xl font-bold text-center mb-12 text-gray-800">Autos usados</h1>
             <h2 id="userGreeting"></h2>
             <p id="availableVehicles"></p>
         </div>
-        <h1 class="text-4xl font-bold text-center mb-12 text-gray-800">Autos usados</h1>
-        
         <div id="vehicleGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <!-- Vehicle cards will be dynamically inserted here -->
         </div>
