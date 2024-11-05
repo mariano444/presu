@@ -434,9 +434,12 @@
                 
             <div id="interesadosContainer" class="p-4 border-t border-gray-200 hidden"></div>
             <div class="p-4 border-t border-gray-200">
-                <h3 class="font-semibold mb-2">Información de Cuotas</h3>
-                <p class="text-sm text-gray-600">Cantidad de Cuotas: <span id="cantidadCuotasDisplay" class="font-medium"></span></p>
-                <p class="text-sm text-gray-600">Valor de la Cuota: $<span id="valorCuotasDisplay" class="font-medium"></span></p>
+                <h3 class="font-semibold mb-2" id="ic">Información de Cuotas</h3>
+                <div id="cuotasInfo">
+                    <p class="text-sm text-gray-600">Cantidad de Cuotas: <span id="cantidadCuotasDisplay" class="font-medium"></span></p>
+                    <p class="text-sm text-gray-600">Valor de la Cuota: $<span id="valorCuotasDisplay" class="font-medium"></span></p>
+                </div>
+                <p id="reservadoInfo" class="text-sm text-green-600 font-semibold hidden">Reservado</p>
             </div>
         </div>
 
@@ -693,6 +696,30 @@ async function cargarInformacionVehiculo(vehiculoId) { // Agregamos vehiculoId c
 
             if (vehiculoData) {
                 console.log('Datos del vehículo:', vehiculoData); // Para depuración
+
+                const { count, error } = await supabaseClient
+                            .from('interested_users')
+                            .select('*', { count: 'exact' })
+                            .eq('vehiculo_id', vehiculoId);
+
+                        if (error) throw error;
+
+                        const cuotasInfo = document.getElementById('cuotasInfo');
+                        const reservadoInfo = document.getElementById('reservadoInfo');
+                        const ic = document.getElementById('ic');
+
+                        if (count > 0) {
+                            // Hide cuotas info and show "Reservado"
+                            ic.classList.add('hidden');
+                            cuotasInfo.classList.add('hidden');
+                            reservadoInfo.classList.remove('hidden');
+                        } else {
+                            // Show cuotas info and hide "Reservado"
+                            cuotasInfo.classList.remove('hidden');
+                            reservadoInfo.classList.add('hidden');
+                            document.getElementById('cantidadCuotasDisplay').textContent = vehiculoData.cantidad_cuota;
+                            document.getElementById('valorCuotasDisplay').textContent = vehiculoData.valor_cuota;
+                        }
 
                 // Update metadata
                 document.getElementById('ogTitle').setAttribute('content', `${vehiculoData.vehiculo_ingreso} en venta`);
