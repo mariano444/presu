@@ -1229,6 +1229,8 @@ document.getElementById('interesadosModal').addEventListener('click', function(e
         const swiperWrapper = document.querySelector('.swiper-wrapper');
         swiperWrapper.innerHTML = '';
 
+        //carrousel ${vehicle.modelo} - 
+        
         data.forEach(vehicle => {
             const slide = document.createElement('div');
             slide.className = 'swiper-slide';
@@ -1237,7 +1239,7 @@ document.getElementById('interesadosModal').addEventListener('click', function(e
                     <img src="${vehicle.fotos[0]}" alt="${vehicle.vehiculo_ingreso}" class="w-full h-56 object-cover">
                     <div class="p-6">
                         <h3 class="text-xl font-semibold mb-2 text-gray-800">${vehicle.vehiculo_ingreso}</h3>
-                        <p class="text-sm text-gray-600 mb-4">${vehicle.modelo} - ${vehicle.kilometraje} km</p>
+                        <p class="text-sm text-gray-600 mb-4">${vehicle.kilometraje} km</p>
                         <div class="flex justify-between items-center">
                             <span class="text-sm font-medium text-gray-500">Vistas: ${vehicle.views || 0}</span>
                             <button onclick="showVehiclePreview(${vehicle.id})" class="bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition duration-300 transform hover:scale-105">Ver más</button>
@@ -1329,9 +1331,9 @@ async function showVehiclePreview(vehicleId) {
                 `).join('')}
             </div>
             <div class="vehicle-info">
-                <div class="info-item">
+                <!--div class="info-item">
                     <span class="info-label">Modelo:</span> ${vehicle.modelo}
-                </div>
+                </div-->
                 <div class="info-item">
                     <span class="info-label">Kilometraje:</span> ${vehicle.kilometraje} km
                 </div>
