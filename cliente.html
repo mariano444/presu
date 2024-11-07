@@ -347,43 +347,6 @@
         }
     }
 
-    async function loadVehicles() {
-        showLoading();
-        const { data, error } = await supabaseClient
-            .from('vehiculos')
-            .select('*')
-            .order('id', { ascending: false });
-
-        hideLoading();
-
-        if (error) {
-            console.error('Error al cargar los vehículos:', error);
-            return;
-        }
-
-        const vehicleList = document.getElementById('vehiculosListItems');
-        vehicleList.innerHTML = '';
-
-        data.forEach(vehicle => {
-            const li = document.createElement('li');
-            li.className = 'py-4';
-            li.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <span class="text-lg font-semibold">${vehicle.vehiculo_ingreso} - ${vehicle.modelo}</span>
-                    <div>
-                        <button onclick="editVehicle(${vehicle.id})" class="text-blue-600 hover:text-blue-800 mr-2">Editar</button>
-                        <button onclick="showDuplicateModal(${vehicle.id})" class="text-green-600 hover:text-green-800 mr-2">Duplicar</button>
-                        <button onclick="deleteVehicle(${vehicle.id})" class="text-red-600 hover:text-red-800">Eliminar</button>
-                        <button onclick="generarEnlaceEncriptado(${vehicle.id})" class="text-purple-600 hover:text-purple-800">Generar Enlace</button>
-                    </div>
-                </div>
-                <p class="text-gray-600">Kilometraje: ${vehicle.kilometraje} km</p>
-                <p class="text-gray-600">Valor de cuota: $${vehicle.valor_cuota} x ${vehicle.cantidad_cuota} cuotas</p>
-            `;
-            vehicleList.appendChild(li);
-        });
-    }
-
     async function editVehicle(id) {
         showLoading();
         const { data, error } = await supabaseClient
@@ -414,7 +377,106 @@
         window.scrollTo(0, 0);
     }
 
-    async function showDuplicateModal(id) {
+
+    async function deleteVehicle(id) {
+        if (confirm('¿Está seguro de que desea eliminar este vehículo?')) {
+            showLoading();
+            const { error } = await supabaseClient
+                .from('vehiculos')
+                .delete()
+                .eq('id', id);
+
+            hideLoading();
+
+            if (error) {
+                console.error('Error al eliminar el vehículo:', error);
+                alert('Error al eliminar el vehículo. Por favor, intente nuevamente.');
+            } else {
+                console.log('Vehículo eliminado con éxito');
+                loadVehicles();
+                alert('Vehículo eliminado con éxito.');
+            }
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('vehicleForm').reset();
+        document.getElementById('imagePreview').innerHTML = '';
+        document.getElementById('existingImagePreview').innerHTML = '';
+        editingVehicleId = null;
+        existingImages = [];
+        document.getElementById('submitButtonText').textContent = 'Guardar Vehículo';
+        document.getElementById('successBanner').classList.add('hidden');
+    }
+
+    function generarEnlaceEncriptado(vehiculoId) {
+        showLoading();
+        const enlace = `https://auto-info.netlify.app/?vehiculo=${vehiculoId}`;
+        const enlaceEncriptado = CryptoJS.AES.encrypt(enlace, 'clave-secreta').toString();
+        const formLink = document.getElementById('formLink');
+        formLink.href = `https://auto-info.netlify.app/?vehiculo=${encodeURIComponent(enlaceEncriptado)}`;
+        formLink.textContent = formLink.href;
+        document.getElementById('successBanner').classList.remove('hidden');
+        hideLoading();
+    }
+
+    // Event Listeners
+    document.getElementById('vehicleForm').addEventListener('submit', guardarDatosVehiculo);
+    window.addEventListener('load', loadVehicles);
+
+    // Cerrar el modal
+    document.querySelector('.close').onclick = function() {
+        document.getElementById('duplicateModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('duplicateModal')) {
+            document.getElementById('duplicateModal').style.display = 'none';
+        }
+    }
+
+
+// Modify the loadVehicles function to display the vehiculo_original_id and views
+async function loadVehicles() {
+    showLoading();
+    const { data, error } = await supabaseClient
+        .from('vehiculos')
+        .select('*')
+        .order('id', { ascending: false });
+
+    hideLoading();
+
+    if (error) {
+        console.error('Error al cargar los vehículos:', error);
+        return;
+    }
+
+    const vehicleList = document.getElementById('vehiculosListItems');
+    vehicleList.innerHTML = '';
+
+    data.forEach(vehicle => {
+        const li = document.createElement('li');
+        li.className = 'py-4';
+        li.innerHTML = `
+            <div class="flex justify-between items-center">
+                <span class="text-lg font-semibold">${vehicle.vehiculo_ingreso} - ${vehicle.modelo}</span>
+                <div>
+                    <button onclick="editVehicle(${vehicle.id})" class="text-blue-600 hover:text-blue-800 mr-2">Editar</button>
+                    <button onclick="showDuplicateModal(${vehicle.id})" class="text-green-600 hover:text-green-800 mr-2">Duplicar</button>
+                    <button onclick="deleteVehicle(${vehicle.id})" class="text-red-600 hover:text-red-800">Eliminar</button>
+                    <button onclick="generarEnlaceEncriptado(${vehicle.id})" class="text-purple-600 hover:text-purple-800">Generar Enlace</button>
+                </div>
+            </div>
+            <p class="text-gray-600">Kilometraje: ${vehicle.kilometraje} km</p>
+            <p class="text-gray-600">Valor de cuota: $${vehicle.valor_cuota} x ${vehicle.cantidad_cuota} cuotas</p>
+            <p class="text-gray-600">Vistas: ${vehicle.views || 0}</p>
+            ${vehicle.vehiculo_original_id ? `<p class="text-gray-600">Duplicado del vehículo ID: ${vehicle.vehiculo_original_id}</p>` : ''}
+        `;
+        vehicleList.appendChild(li);
+    });
+}
+
+async function showDuplicateModal(id) {
         showLoading();
         const { data, error } = await supabaseClient
             .from('vehiculos')
@@ -426,12 +488,21 @@
 
         if (error) {
             console.error('Error al obtener el vehículo:', error);
+            alert('Error al obtener el vehículo. Por favor, intente nuevamente.');
             return;
         }
 
         const modal = document.getElementById('duplicateModal');
         const form = document.getElementById('duplicateForm');
         form.innerHTML = ''; // Clear previous content
+
+        // Set the vehicle ID to duplicate
+        const vehicleIdInput = document.createElement('input');
+        vehicleIdInput.type = 'hidden';
+        vehicleIdInput.id = 'vehicleIdToDuplicate';
+        vehicleIdInput.name = 'vehicleIdToDuplicate';
+        vehicleIdInput.value = id;
+        form.appendChild(vehicleIdInput);
 
         // Create form fields
         const fields = ['vehiculo_ingreso', 'modelo', 'kilometraje', 'ficha_tecnica', 'cantidad_cuota', 'valor_cuota'];
@@ -489,80 +560,62 @@
         showLoading();
         const formData = new FormData(form);
         const vehicleData = Object.fromEntries(formData.entries());
+        
+        // Get the original vehicle ID from the hidden input
+        const originalVehicleId = parseInt(vehicleData.vehicleIdToDuplicate, 10);
+        
+        if (isNaN(originalVehicleId)) {
+            console.error('Invalid vehicle ID:', vehicleData.vehicleIdToDuplicate);
+            alert('Error: ID de vehículo inválido');
+            hideLoading();
+            return;
+        }
+
         vehicleData.fotos = vehicleData.fotos.split(',').map(url => url.trim());
         vehicleData.es_duplicado = true;
+        vehicleData.vehiculo_original_id = originalVehicleId;
 
-        const { data, error } = await supabaseClient
-            .from('vehiculos')
-            .insert([vehicleData]);
+        try {
+            // Fetch the original vehicle's views
+            const { data: originalVehicle, error: fetchError } = await supabaseClient
+                .from('vehiculos')
+                .select('views')
+                .eq('id', originalVehicleId)
+                .single();
 
-        hideLoading();
+            if (fetchError) {
+                console.error('Error fetching original vehicle:', fetchError);
+                throw new Error(`Error fetching original vehicle: ${fetchError.message}`);
+            }
 
-        if (error) {
-            console.error('Error al duplicar el vehículo:', error);
-            alert('Error al duplicar el vehículo. Por favor, intente nuevamente.');
-        } else {
+            if (!originalVehicle) {
+                throw new Error(`Original vehicle with ID ${originalVehicleId} not found`);
+            }
+
+            // Set the views of the duplicated vehicle to match the original
+            vehicleData.views = originalVehicle.views || 0;
+
+            // Remove the vehicleIdToDuplicate field before inserting
+            delete vehicleData.vehicleIdToDuplicate;
+
+            // Insert the new duplicated vehicle
+            const { data, error } = await supabaseClient
+                .from('vehiculos')
+                .insert([vehicleData]);
+
+            if (error) {
+                throw new Error(`Error inserting duplicated vehicle: ${error.message}`);
+            }
+
             console.log('Vehículo duplicado con éxito:', data);
             document.getElementById('duplicateModal').style.display = 'none';
             loadVehicles();
             alert('Vehículo duplicado con éxito.');
-        }
-    }
-
-    async function deleteVehicle(id) {
-        if (confirm('¿Está seguro de que desea eliminar este vehículo?')) {
-            showLoading();
-            const { error } = await supabaseClient
-                .from('vehiculos')
-                .delete()
-                .eq('id', id);
-
+        } catch (error) {
+            console.error('Error during vehicle duplication:', error);
+            alert(`Error al duplicar el vehículo: ${error.message}`);
+        } finally {
             hideLoading();
-
-            if (error) {
-                console.error('Error al eliminar el vehículo:', error);
-                alert('Error al eliminar el vehículo. Por favor, intente nuevamente.');
-            } else {
-                console.log('Vehículo eliminado con éxito');
-                loadVehicles();
-                alert('Vehículo eliminado con éxito.');
-            }
-        }
-    }
-
-    function resetForm() {
-        document.getElementById('vehicleForm').reset();
-        document.getElementById('imagePreview').innerHTML = '';
-        document.getElementById('existingImagePreview').innerHTML = '';
-        editingVehicleId = null;
-        existingImages = [];
-        document.getElementById('submitButtonText').textContent = 'Guardar Vehículo';
-        document.getElementById('successBanner').classList.add('hidden');
-    }
-
-    function generarEnlaceEncriptado(vehiculoId) {
-        showLoading();
-        const enlace = `https://auto-info.netlify.app/?vehiculo=${vehiculoId}`;
-        const enlaceEncriptado = CryptoJS.AES.encrypt(enlace, 'clave-secreta').toString();
-        const formLink = document.getElementById('formLink');
-        formLink.href = `https://auto-info.netlify.app/?vehiculo=${encodeURIComponent(enlaceEncriptado)}`;
-        formLink.textContent = formLink.href;
-        document.getElementById('successBanner').classList.remove('hidden');
-        hideLoading();
-    }
-
-    // Event Listeners
-    document.getElementById('vehicleForm').addEventListener('submit', guardarDatosVehiculo);
-    window.addEventListener('load', loadVehicles);
-
-    // Cerrar el modal
-    document.querySelector('.close').onclick = function() {
-        document.getElementById('duplicateModal').style.display = 'none';
-    }
-
-    window.onclick = function(event) {
-        if (event.target == document.getElementById('duplicateModal')) {
-            document.getElementById('duplicateModal').style.display = 'none';
         }
     }
     </script>
